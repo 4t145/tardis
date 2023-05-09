@@ -5,6 +5,7 @@ use lettre::{address, error, transport::smtp::authentication::Credentials, Async
 use log::{error, info, trace, warn};
 
 use crate::basic::error::TardisError;
+use crate::config::config_dto::MailModuleConfig;
 use crate::{FrameworkConfig, TardisFuns, TardisResult};
 
 pub struct TardisMailClient {
@@ -18,29 +19,38 @@ impl TardisMailClient {
         clients.insert(
             "".to_string(),
             TardisMailClient::init(
-                &conf.mail.smtp_host,
-                conf.mail.smtp_port,
-                &conf.mail.smtp_username,
-                &conf.mail.smtp_password,
-                &conf.mail.default_from,
+                &conf.mail.default_module
             )?,
         );
         for (k, v) in &conf.mail.modules {
             clients.insert(
                 k.to_string(),
-                TardisMailClient::init(&v.smtp_host, v.smtp_port, &v.smtp_username, &v.smtp_password, &v.default_from)?,
+                TardisMailClient::init(v)?,
             );
         }
         Ok(clients)
     }
 
-    pub fn init(smtp_host: &str, smtp_port: u16, smtp_username: &str, smtp_password: &str, default_from: &str) -> TardisResult<TardisMailClient> {
+    pub fn init(config: &MailModuleConfig) -> TardisResult<TardisMailClient> {
         info!("[Tardis.MailClient] Initializing");
+        let MailModuleConfig {
+            smtp_host,
+            smtp_port,
+            smtp_username,
+            smtp_password,
+            default_from,
+            using_starttls,
+        } = config;
         let creds = Credentials::new(smtp_username.to_string(), smtp_password.to_string());
-        let client = AsyncSmtpTransport::<Tokio1Executor>::relay(smtp_host)
+        let client = (if *using_starttls {
+            trace!("[Tardis.MailClient] Using STARTTLS");
+            AsyncSmtpTransport::<Tokio1Executor>::starttls_relay
+        } else {
+            AsyncSmtpTransport::<Tokio1Executor>::relay
+        })(smtp_host)
             .map_err(|_| TardisError::internal_error(&format!("[Tardis.MailClient] Failed to create SMTP client: {smtp_host}"), "500-tardis-mail-init-error"))?
             .credentials(creds)
-            .port(smtp_port)
+            .port(*smtp_port)
             .build();
         info!("[Tardis.MailClient] Initialized");
         TardisResult::Ok(TardisMailClient {

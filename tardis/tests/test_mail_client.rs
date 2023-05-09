@@ -1,7 +1,9 @@
 use std::env;
 
 use tardis::basic::result::TardisResult;
-use tardis::config::config_dto::{CacheConfig, DBConfig, FrameworkConfig, MQConfig, MailConfig, OSConfig, SearchConfig, TardisConfig, WebServerConfig};
+use tardis::config::config_dto::{
+    CacheConfig, DBConfig, FrameworkConfig, MQConfig, MailConfig, MailModuleConfigBuilder, OSConfig, SearchConfig, TardisConfig, WebServerConfig,
+};
 use tardis::mail::mail_client::TardisMailSendReq;
 use tardis::TardisFuns;
 
@@ -37,11 +39,15 @@ async fn test_mail_client() -> TardisResult<()> {
             },
             mail: MailConfig {
                 enabled: true,
-                smtp_host: "smtp.163.com".to_string(),
-                smtp_port: 465,
-                smtp_username: "<username>".to_string(),
-                smtp_password: "<password>".to_string(),
-                default_from: "<username>@163.com".to_string(),
+                default_module: MailModuleConfigBuilder::default()
+                    .smtp_host("smtp.163.com")
+                    .smtp_port(465_u16)
+                    .smtp_username("<username>@163.com")
+                    .smtp_password("<password>")
+                    // .using_starttls(true)
+                    .default_from("<username>@163.com")
+                    .build()
+                    .unwrap(),
                 modules: Default::default(),
             },
             os: OSConfig {

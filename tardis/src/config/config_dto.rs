@@ -4,6 +4,7 @@ use crate::{
 };
 use serde_json::Value;
 use std::collections::HashMap;
+use derive_builder::Builder;
 
 /// Configuration of Tardis / Tardis的配置
 #[derive(Serialize, Clone)]
@@ -570,34 +571,29 @@ impl Default for SearchModuleConfig {
 pub struct MailConfig {
     /// Whether to enable the mail function / 是否启用邮件操作功能
     pub enabled: bool,
-    pub smtp_host: String,
-    pub smtp_port: u16,
-    pub smtp_username: String,
-    pub smtp_password: String,
-    pub default_from: String,
+    pub default_module: MailModuleConfig,
     /// Mail module configuration / 邮件模块配置
     pub modules: HashMap<String, MailModuleConfig>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Builder)]
+#[non_exhaustive]
+#[builder(setter(into), default)]
 #[serde(default)]
-pub struct MailModuleConfig {
+pub struct  MailModuleConfig {
     pub smtp_host: String,
     pub smtp_port: u16,
     pub smtp_username: String,
     pub smtp_password: String,
     pub default_from: String,
+    pub using_starttls: bool,
 }
 
 impl Default for MailConfig {
     fn default() -> Self {
         MailConfig {
             enabled: true,
-            smtp_host: "".to_string(),
-            smtp_port: 0,
-            smtp_username: "".to_string(),
-            smtp_password: "".to_string(),
-            default_from: "".to_string(),
+            default_module: Default::default(),
             modules: Default::default(),
         }
     }
@@ -611,6 +607,7 @@ impl Default for MailModuleConfig {
             smtp_username: "".to_string(),
             smtp_password: "".to_string(),
             default_from: "".to_string(),
+            using_starttls: false,
         }
     }
 }

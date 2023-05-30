@@ -530,6 +530,7 @@ impl TardisFuns {
         unsafe {
             let conf = TARDIS_INST.custom_config.as_ref().expect("[Tardis.Config] Custom Config doesn't exist");
             let cached_conf = TARDIS_INST._custom_config_cached.as_ref().expect("[Tardis.Config] Custom Config doesn't exist");
+            // fallback: 
             if let Some(t) = conf.get(code) {
                 if let Some(cached_t) = cached_conf.get(code) {
                     return cached_t.downcast_ref::<T>().unwrap_or_else(|| panic!("[Tardis.Config] Custom Config [{code}] type error"));
